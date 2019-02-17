@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Hello World</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://unpkg.com/konva@2.4.2/konva.min.js"></script>
+
+</head>
+<body>
+        
+    <div class="container" id="headerbar">
+        <input type="file" id="floorplan" accept="image/*">
+    
+        Select Beacon:
+        <select id="beaconlist">
+            <option value="">Select Beacon</option>
+        </select>
+    
+        <input type="button" value="save" id="save">
+    </div>
+    <script src="cordova.js"></script>
+    <div id="kc" class="container"></div>
+    <script src="js/index.js"></script>
+</body>
+</html>
