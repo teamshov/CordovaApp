@@ -1,6 +1,7 @@
 #Internal package file, do not edit.
-#Sun Feb 17 15:49:17 GST 2019
+#Tue Feb 19 12:35:10 GST 2019
 4.path=www/cordova-js-src/android/promptbasednativeapi.js
+13.baseType=DIRECTORY
 8.set=ASSET
 6.path=www/plugins/cordova-plugin-ble-central/www/ble.js
 0.baseType=DIRECTORY
@@ -8,13 +9,14 @@
 5.baseType=DIRECTORY
 1.base=C\:\\cardove\\platforms\\android\\app\\build\\intermediates\\assets\\debug
 8.path=www/cordova-js-src/android/nativeapiprovider.js
-12.path=www/img/logo.png
+12.path=www/js/beacons.js
 3.base=C\:\\cardove\\platforms\\android\\app\\build\\intermediates\\assets\\debug
 4.set=ASSET
 5.base=C\:\\cardove\\platforms\\android\\app\\build\\intermediates\\assets\\debug
 7.base=C\:\\cardove\\platforms\\android\\app\\build\\intermediates\\assets\\debug
 11.base=C\:\\cardove\\platforms\\android\\app\\build\\intermediates\\assets\\debug
 9.base=C\:\\cardove\\platforms\\android\\app\\build\\intermediates\\assets\\debug
+13.base=C\:\\cardove\\platforms\\android\\app\\build\\intermediates\\assets\\debug
 1.baseType=DIRECTORY
 11.set=ASSET
 0.set=ASSET
@@ -34,17 +36,19 @@
 9.path=www/css/index.css
 6.set=ASSET
 2.base=C\:\\cardove\\platforms\\android\\app\\build\\intermediates\\transforms\\dexMerger\\debug\\0
+13.path=www/img/logo.png
 11.baseType=DIRECTORY
 4.base=C\:\\cardove\\platforms\\android\\app\\build\\intermediates\\assets\\debug
 3.baseType=DIRECTORY
 6.base=C\:\\cardove\\platforms\\android\\app\\build\\intermediates\\assets\\debug
 10.base=C\:\\cardove\\platforms\\android\\app\\build\\intermediates\\assets\\debug
+13.set=ASSET
 8.base=C\:\\cardove\\platforms\\android\\app\\build\\intermediates\\assets\\debug
 2.set=DEX
 8.baseType=DIRECTORY
 12.base=C\:\\cardove\\platforms\\android\\app\\build\\intermediates\\assets\\debug
 9.set=ASSET
-count=13
+count=14
 12.baseType=DIRECTORY
 4.baseType=DIRECTORY
 5.set=ASSET

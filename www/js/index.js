@@ -1,3 +1,22 @@
+var stage;
+var bglayer;
+var fglayer;
+var layer;
+var gridlayer;
+var msgtext;
+var addedBeacons = [];
+var group;
+var beacons = {};
+var rssimap;
+var grid;
+var origin = {};
+origin.x = 307;
+origin.y = 554;
+var scale = {};
+scale.y = -11.2;
+scale.x = 10.9;
+
+
 function asHexString(i) {
   var hex;
 
@@ -39,16 +58,13 @@ var app = {
   },
   bindEvents: function() {
       document.addEventListener('deviceready', this.onDeviceReady, false);
-      refreshButton.addEventListener('touchstart', this.refreshDeviceList, false);
-      disconnectButton.addEventListener('touchstart', this.disconnect, false);
-      deviceList.addEventListener('touchstart', this.connect, false); // assume not scrolling
   },
   onDeviceReady: function() {
       app.refreshDeviceList();
   },
   refreshDeviceList: function() {
       // scan for all devices
-      ble.scan([], 5, app.onDiscoverDevice, app.onError);
+      ble.startScanWithOptions([], {reportDuplicates: true }, app.onDiscoverDevice, app.onError);
   },
   onDiscoverDevice: function(device) {
     var rssi = device.rssi;
@@ -57,29 +73,55 @@ var app = {
     var str = ""
     new Uint8Array(arr["16"]).slice(3,11).forEach(e=>str+=asHexString(e))
     
-  console.log('RSSI: ' + rssi +"\ndata: " + str);
+  //console.log('RSSI: ' + rssi +"\ndata: " + str);
+  if(str in beacons)
+    beacons[str].update(rssi);
+    
   },
   onError: function(reason) {
       alert("ERROR: " + reason); // real apps should use notification.alert
   }
 };
 
+function probabilityFunc(upos, bpos, mean, std) {
+  var dist = Math.sqrt((upos.x-bpos.x) ** 2 + (upos.y - bpos.y)**2);
+  var A = Math.exp(-((dist-mean)**2)/(std**2));
+  var B = 1/(std*Math.sqrt(2*Math.PI));
+  return A*B;
+}
 
-var stage;
-var bglayer;
-var fglayer;
-var layer;
-var msgtext;
-var addedBeacons = [];
-var group;
-var beacons;
+function heatMapColorforValue(value){
+  var h = (1.0 - value) * 240
+  return "hsl(" + h + ", 100%, 50%)";
+}
 
-var origin = {};
-origin.x = 307;
-origin.y = 554;
-var scale = {};
-scale.y = -11.2;
-scale.x = 10.9;
+function updateState() {
+
+  for(var x = 0; x < 30; x++) {
+    for(var y = 0; y < 30; y++) {
+      var upos = {x:x, y:y};
+      var value = 0;
+
+      for(var bid  in beacons) {
+        var b = beacons[bid]
+        var x2 = b.lbl.x();
+        var y2 = b.lbl.y();
+        var d = b.distance;
+        if(d == null) {
+          continue;
+        }
+        var bpos = {x: (x2-origin.x)/scale.x, y: (y2-origin.y)/scale.y};
+        value += probabilityFunc(upos, bpos, d, 3);
+        
+      }
+      console.log(value)
+      grid[x][y].fill(heatMapColorforValue(value));
+
+    }
+  }
+  gridlayer.batchDraw()
+  layer.batchDraw();
+}
 
 function writeMessage(message) {
   msgtext.setText(message);
@@ -89,6 +131,8 @@ function writeMessage(message) {
 $(function($) {
     setupKonva();
     populateBeacons();
+    setInterval(updateState, 1000);
+    app.initialize();
 });
   
 
@@ -110,16 +154,22 @@ function AddSelectedBeacon() {
     }
 }
 
-function addBeacon(bid, x, y) {
+function updateBeacon(rssi) {
+  var offset = this.doc.offset
+  this.distance = Math.pow(10, (offset-rssi-15)/25);
+  this.txt.text(this.doc._id+"\ndis: " + this.distance + "\nrssi: " + rssi);
 
+
+}
+
+function addBeacon(doc) {
+    var bid = doc._id;
+    var x = doc.xpos*scale.x + origin.x;
+    var y = doc.ypos*scale.y + origin.y;
     if(bid=="") return false;
 
     var beacon = {};
-    beacon.bid = bid;
-    beacon.x = x;
-    beacon.y = y;
-
-    
+    beacon.doc = doc; 
     
     var label = new Konva.Label({
       x: x,
@@ -138,14 +188,14 @@ function addBeacon(bid, x, y) {
             shadowOffset: 10,
             shadowOpacity: 0.5
         }));
-
-    label.add(new Konva.Text({
-        text: bid,
-        fontFamily: 'Calibri',
-        fontSize: 18,
-        padding: 5,
-        fill: 'white'
-    }));
+        beacon.txt = new Konva.Text({
+          text: bid,
+          fontFamily: 'Calibri',
+          fontSize: 18,
+          padding: 5,
+          fill: 'white'
+      });
+    label.add(beacon.txt);
 
     label.on('dragmove', function () {
       var pos = this;
@@ -155,30 +205,32 @@ function addBeacon(bid, x, y) {
     });
 
     beacon.lbl = label;
+    
     layer.add(label);
     layer.draw();
-
+    beacon.update = updateBeacon.bind(beacon);
     addedBeacons.push(beacon);
+    beacons[bid] = beacon;
     return true;
 };
 
 function populateBeacons() {
   $.getJSON("http://omaraa.ddns.net:62027/db/all/beacons", function(r){
-      beacons = r
+      var beaconsr = r
       console.log(r)
       var select = $("#beaconlist")
 
-      for(var b in beacons){
+      for(var b in beaconsr){
         var newoption = $("<option></option>")
-        newoption.text(beacons[b])
-        newoption.val(beacons[b])
+        newoption.text(beaconsr[b])
+        newoption.val(beaconsr[b])
         newoption.appendTo(select)
       }
 
-      for(var b in beacons){
-         $.get("http://omaraa.ddns.net:62027/db/beacons/" + beacons[b] , function(r){
+      for(var b in beaconsr){
+         $.get("http://omaraa.ddns.net:62027/db/beacons/" + beaconsr[b] , function(r){
           console.log(r);
-            addBeacon(r._id, r.xpos*scale.x + origin.x, r.ypos*scale.y + origin.y);
+            addBeacon(r);
             var selectedBeacon = $("#beaconlist option[value="+r._id+"]");
             selectedBeacon.attr('disabled', 'disabled')
          });
@@ -187,17 +239,21 @@ function populateBeacons() {
 }
 
 function setupKonva() {
+
+  var width = window.innerWidth;
+  var height = window.innerHeight;
     // first we need to create a stage
   stage = new Konva.Stage({
     container: 'kc',   // id of container <div>
-    width: 500,
-    height: 500,
+    width: width,
+    height: height,
     draggable: true
   });
   bglayer = new Konva.Layer();
   fglayer = new Konva.Layer();
   // then create layer
   layer = new Konva.Layer();
+  gridlayer  = new Konva.Layer();
 
   // create our shape
   var circle = new Konva.Circle({
@@ -218,7 +274,8 @@ function setupKonva() {
       text: '',
       fill: 'black'
     });
-
+  
+  setGrid();
   setFloorplan()
 
   stage.on('dblclick touchstart', AddSelectedBeacon);
@@ -231,11 +288,23 @@ function setupKonva() {
 
   // add the layer to the stage
   stage.add(bglayer);
-  stage.add(layer);
+  stage.add(gridlayer);
+  //stage.add(layer);
+  
   stage.add(fglayer);
 
   // draw the image
   stage.draw();
+
+  var scrollContainer = document.getElementById('scroll-container');
+        scrollContainer.addEventListener('scroll', function () {
+            var dx = scrollContainer.scrollLeft;
+            var dy = scrollContainer.scrollTop;
+            stage.container().style.transform = 'translate(' + dx + 'px, ' + dy + 'px)';
+            stage.x(-dx);
+            stage.y(-dy);
+            stage.batchDraw();
+  })
 }
 
 function setFloorplan() {
@@ -297,4 +366,37 @@ $("#save").click(function() {
   }
 });
 
-app.initialize();
+function scaleX(x) {
+  return x*scale.x + origin.x;
+}
+
+function scaleY(y) {
+  return y*scale.y + origin.y;
+}
+
+function setGrid() {
+  grid = new Array(30);
+  for(var i = 0; i < 30; i++) {
+    grid[i] = new Array(30);
+  }
+
+  for(var x = 0; x < 30; x++) {
+    for(var y = 0; y < 30; y++) {
+      var upos = {x:x, y:y};
+      var value = 0;
+
+      grid[x][y] = new Konva.Rect(
+        {
+          x:scaleX(x),
+          y:scaleY(y)-10,
+          width:10,
+          height:10,
+          fill: 'black'
+        }
+      );
+
+        gridlayer.add(grid[x][y]);
+    }
+  }
+  gridlayer.batchDraw();
+}

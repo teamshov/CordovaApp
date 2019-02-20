@@ -13,6 +13,7 @@ module.exports.metadata =
 // TOP OF METADATA
 {
   "cordova-plugin-whitelist": "1.3.3",
+  "cordova-plugin-browsersync": "0.1.7",
   "cordova-plugin-ble-central": "1.2.2"
 };
 // BOTTOM OF METADATA

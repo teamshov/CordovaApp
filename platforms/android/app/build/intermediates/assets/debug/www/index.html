@@ -5,7 +5,30 @@
   <title>Hello World</title>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
   <script src="https://unpkg.com/konva@2.4.2/konva.min.js"></script>
+  <style>
+    body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background-color: #F0F0F0;
+        height: 100%;
+        overflow: auto;
+    }
 
+    #large-container {
+        width: 3000px;
+        height: 3000px;
+        overflow: hidden;
+    }
+
+    #scroll-container {
+        width: calc(100% - 22px);
+        height: calc(100vh - 22px);
+        overflow: auto;
+        margin: 10px;
+        border: 1px solid grey;
+    }
+</style>
 </head>
 <body>
         
@@ -19,8 +42,13 @@
     
         <input type="button" value="save" id="save">
     </div>
+    
     <script src="cordova.js"></script>
-    <div id="kc" class="container"></div>
+    <div id="scroll-container">
+        <div id="large-container">
+            <div id="kc"></div>
+        </div>
+    </div>
     <script src="js/index.js"></script>
 </body>
 </html>
