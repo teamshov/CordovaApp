@@ -4,8 +4,8 @@
         <param name="android-package" value="org.apache.cordova.whitelist.WhitelistPlugin" />
         <param name="onload" value="true" />
     </feature>
-    <feature name="BLE">
-        <param name="android-package" value="com.megster.cordova.ble.central.BLECentralPlugin" />
+    <feature name="BluetoothLePlugin">
+        <param name="android-package" value="com.randdusing.bluetoothle.BluetoothLePlugin" />
     </feature>
     <name>HelloCordova</name>
     <description>

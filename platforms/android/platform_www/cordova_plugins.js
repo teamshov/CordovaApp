@@ -1,11 +1,11 @@
 cordova.define('cordova/plugin_list', function(require, exports, module) {
 module.exports = [
   {
-    "id": "cordova-plugin-ble-central.ble",
-    "file": "plugins/cordova-plugin-ble-central/www/ble.js",
-    "pluginId": "cordova-plugin-ble-central",
+    "id": "cordova-plugin-bluetoothle.BluetoothLe",
+    "file": "plugins/cordova-plugin-bluetoothle/www/bluetoothle.js",
+    "pluginId": "cordova-plugin-bluetoothle",
     "clobbers": [
-      "ble"
+      "window.bluetoothle"
     ]
   }
 ];
@@ -14,7 +14,7 @@ module.exports.metadata =
 {
   "cordova-plugin-whitelist": "1.3.3",
   "cordova-plugin-browsersync": "0.1.7",
-  "cordova-plugin-ble-central": "1.2.2"
+  "cordova-plugin-bluetoothle": "4.5.3"
 };
 // BOTTOM OF METADATA
 });

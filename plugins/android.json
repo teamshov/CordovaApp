@@ -13,7 +13,7 @@
     "cordova-plugin-browsersync": {
       "PACKAGE_NAME": "io.cordova.hellocordova"
     },
-    "cordova-plugin-ble-central": {
+    "cordova-plugin-bluetoothle": {
       "PACKAGE_NAME": "io.cordova.hellocordova"
     }
   },

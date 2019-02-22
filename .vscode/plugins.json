@@ -1,1 +1,1 @@
-{"plugins":["cordova-plugin-whitelist","cordova-plugin-ble-central","cordova-plugin-compat","cordova-plugin-browsersync"]}
+{"plugins":["cordova-plugin-whitelist","cordova-plugin-compat","cordova-plugin-browsersync","cordova-plugin-bluetoothle"]}

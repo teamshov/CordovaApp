@@ -60,18 +60,23 @@ var app = {
       document.addEventListener('deviceready', this.onDeviceReady, false);
   },
   onDeviceReady: function() {
-      app.refreshDeviceList();
+    bluetoothle.initialize(app.startScan);
+      
   },
-  refreshDeviceList: function() {
+  startScan: function(status) {
       // scan for all devices
-      ble.startScanWithOptions([], {reportDuplicates: true }, app.onDiscoverDevice, app.onError);
+      bluetoothle.startScan(app.onDiscoverDevice, app.onError, {
+        "scanMode": bluetoothle.SCAN_MODE_LOW_LATENCY,
+        "matchMode": bluetoothle.MATCH_MODE_AGGRESSIVE,
+      });
   },
   onDiscoverDevice: function(device) {
+    //console.log(device)
     var rssi = device.rssi;
-    var data = device.advertising;  
-    var arr = parseAdvertisingData(data)
+    var data = parseAdvertisingData(bluetoothle.encodedStringToBytes(device.advertisement));  
     var str = ""
-    new Uint8Array(arr["16"]).slice(3,11).forEach(e=>str+=asHexString(e))
+
+    new Uint8Array(data["16"]).slice(3, 11).forEach(e=>str+=asHexString(e))
     
   //console.log('RSSI: ' + rssi +"\ndata: " + str);
   if(str in beacons)
@@ -79,13 +84,13 @@ var app = {
     
   },
   onError: function(reason) {
-      alert("ERROR: " + reason); // real apps should use notification.alert
+      console.log(reason)
   }
 };
 
 function probabilityFunc(upos, bpos, mean, std) {
   var dist = Math.sqrt((upos.x-bpos.x) ** 2 + (upos.y - bpos.y)**2);
-  var A = Math.exp(-((dist-mean)**2)/(std**2));
+  var A = Math.exp(-((dist-mean)**2)/(2*(std)**2));
   var B = 1/(std*Math.sqrt(2*Math.PI));
   return A*B;
 }
@@ -96,7 +101,9 @@ function heatMapColorforValue(value){
 }
 
 function updateState() {
-
+  var max = 0;
+  var mxx = 0;
+  var myy = 0;
   for(var x = 0; x < 30; x++) {
     for(var y = 0; y < 30; y++) {
       var upos = {x:x, y:y};
@@ -107,18 +114,24 @@ function updateState() {
         var x2 = b.lbl.x();
         var y2 = b.lbl.y();
         var d = b.distance;
-        if(d == null) {
+        if(typeof(d) != 'number' || isNaN(d)) {
           continue;
         }
         var bpos = {x: (x2-origin.x)/scale.x, y: (y2-origin.y)/scale.y};
-        value += probabilityFunc(upos, bpos, d, 3);
+        value += probabilityFunc(upos, bpos, d, d);
         
       }
-      console.log(value)
+      if(value > max) {
+       mxx = x;
+       myy = y;
+       max = value; 
+      }
+      //console.log(value)
       grid[x][y].fill(heatMapColorforValue(value));
 
     }
   }
+  grid[mxx][myy].fill("red");
   gridlayer.batchDraw()
   layer.batchDraw();
 }
@@ -154,9 +167,17 @@ function AddSelectedBeacon() {
     }
 }
 
+var avgs = 10
 function updateBeacon(rssi) {
   var offset = this.doc.offset
-  this.distance = Math.pow(10, (offset-rssi-15)/25);
+  this.rssis[this.rssii%avgs] = rssi;
+  ++this.rssii 
+  var arssi = 0;
+  for(var i = 0; i < avgs; i++) {
+    arssi += this.rssis[i]
+  }
+  arssi = arssi / avgs;
+  this.distance = Math.pow(10, (offset-arssi)/25);
   this.txt.text(this.doc._id+"\ndis: " + this.distance + "\nrssi: " + rssi);
 
 
@@ -209,6 +230,8 @@ function addBeacon(doc) {
     layer.add(label);
     layer.draw();
     beacon.update = updateBeacon.bind(beacon);
+    beacon.rssis = new Array(avgs)
+    beacon.rssii = 0;
     addedBeacons.push(beacon);
     beacons[bid] = beacon;
     return true;
@@ -289,7 +312,7 @@ function setupKonva() {
   // add the layer to the stage
   stage.add(bglayer);
   stage.add(gridlayer);
-  //stage.add(layer);
+  stage.add(layer);
   
   stage.add(fglayer);
 
