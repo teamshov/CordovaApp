@@ -15,7 +15,8 @@ origin.y = 554;
 var scale = {};
 scale.y = -11.2;
 scale.x = 10.9;
-var TESTER = document.getElementById('tester');
+var plot = document.getElementById('plot');
+
 
 function asHexString(i) {
   var hex;
@@ -173,25 +174,28 @@ function updateBeacon(rssi) {
 
   var offset = this.doc.offset
 
-  this.rssis.push(rssi);
+  //this.rssis.push(rssi);
   
-  ++this.rssii 
+  //++this.rssii 
 
-  var n = this.rssii-1;
+  //var n = this.rssii-1;
   var a = 0.1
   
-  if(n >= 1) {
-    var max = Math.max(this.rssis[n], this.p)
-    var min = Math.min(this.rssis[n], this.p)
+  if(this.p != null) {
+    var max = Math.max(rssi, this.p)
+    var min = Math.min(rssi, this.p)
     this.p = min*a+max*(1-a)
     
   } else {
-    this.p = this.rssis[n];
+    this.p = rssi;
   }
-  this.distance = Math.pow(10, (-71-this.p)/20);
-  this.txt.text(this.doc._id+"\ndis: " + this.distance + "\nrssi: " + this.p);
+  this.rssik = this.kf.filter(rssi)
 
-
+  if(this.doc._id == "905bfc88fdb5f32d") {
+   // Plotly.plot(plot, {y: this.rssik}, {margin: {t:0}});
+  }
+  this.distance = Math.pow(10, (offset-this.rssik)/20);
+  this.txt.text(this.doc._id+"\ndis: " + this.distance + "\nrssi: " + this.rssik);
 }
 
 function addBeacon(doc) {
@@ -245,6 +249,7 @@ function addBeacon(doc) {
     beacon.rssit = []
     beacon.predict = []
     beacon.rssii = 0;
+    beacon.kf = new KalmanFilter({R: 0.008, Q: 10})
     addedBeacons.push(beacon);
     beacons[bid] = beacon;
     return true;

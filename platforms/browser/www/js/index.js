@@ -15,7 +15,8 @@ origin.y = 554;
 var scale = {};
 scale.y = -11.2;
 scale.x = 10.9;
-var TESTER = document.getElementById('tester');
+var plot = document.getElementById('plot');
+
 
 function asHexString(i) {
   var hex;
@@ -173,37 +174,28 @@ function updateBeacon(rssi) {
 
   var offset = this.doc.offset
 
-  this.rssis.push(rssi);
-  this.rssit.push(Date.now() / (1000));
+  //this.rssis.push(rssi);
   
-  ++this.rssii 
+  //++this.rssii 
 
-  var n = this.rssii-1;
-
+  //var n = this.rssii-1;
+  var a = 0.1
   
-  if(n >= 1) {
-    var max = Math.max(this.rssis[n], this.p)
-    var min = Math.min(this.rssis[n], this.p)
-    this.p = min*0.1+max*(1-0.1)
+  if(this.p != null) {
+    var max = Math.max(rssi, this.p)
+    var min = Math.min(rssi, this.p)
+    this.p = min*a+max*(1-a)
     
   } else {
-    this.p = this.rssis[n];
+    this.p = rssi;
   }
-  var predict = this.p
+  this.rssik = this.kf.filter(rssi)
 
-  var stdv = Math.sqrt(((predict-this.rssis[n])**2)/2)
   if(this.doc._id == "905bfc88fdb5f32d") {
-    console.log("predict: " + predict + " stdv: " + stdv  + "crssi: " + this.rssis[n])
-    this.predict.push(predict)
-    Plotly.extendTraces(TESTER, {
-      y:[[this.p],[this.rssis[n]],
-  }, [0,1])
+   // Plotly.plot(plot, {y: this.rssik}, {margin: {t:0}});
   }
-  var smoothrssi = predict + (Math.sign(predict-this.rssis[n]) * stdv * (stdv**2));
-  this.distance = Math.pow(10, (offset-smoothrssi)/25);
-  this.txt.text(this.doc._id+"\ndis: " + this.distance + "\nrssi: " + smoothrssi);
-
-
+  this.distance = Math.pow(10, (offset-this.rssik)/20);
+  this.txt.text(this.doc._id+"\ndis: " + this.distance + "\nrssi: " + this.rssik);
 }
 
 function addBeacon(doc) {
@@ -257,6 +249,7 @@ function addBeacon(doc) {
     beacon.rssit = []
     beacon.predict = []
     beacon.rssii = 0;
+    beacon.kf = new KalmanFilter({R: 0.008, Q: 10})
     addedBeacons.push(beacon);
     beacons[bid] = beacon;
     return true;
