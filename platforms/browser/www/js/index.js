@@ -174,22 +174,34 @@ function updateBeacon(rssi) {
   var offset = this.doc.offset
 
   this.rssis.push(rssi);
+  this.rssit.push(Date.now() / (1000));
   
   ++this.rssii 
 
   var n = this.rssii-1;
-  var a = 0.1
+
   
   if(n >= 1) {
     var max = Math.max(this.rssis[n], this.p)
     var min = Math.min(this.rssis[n], this.p)
-    this.p = min*a+max*(1-a)
+    this.p = min*0.1+max*(1-0.1)
     
   } else {
     this.p = this.rssis[n];
   }
-  this.distance = Math.pow(10, (-71-this.p)/20);
-  this.txt.text(this.doc._id+"\ndis: " + this.distance + "\nrssi: " + this.p);
+  var predict = this.p
+
+  var stdv = Math.sqrt(((predict-this.rssis[n])**2)/2)
+  if(this.doc._id == "905bfc88fdb5f32d") {
+    console.log("predict: " + predict + " stdv: " + stdv  + "crssi: " + this.rssis[n])
+    this.predict.push(predict)
+    Plotly.extendTraces(TESTER, {
+      y:[[this.p],[this.rssis[n]],
+  }, [0,1])
+  }
+  var smoothrssi = predict + (Math.sign(predict-this.rssis[n]) * stdv * (stdv**2));
+  this.distance = Math.pow(10, (offset-smoothrssi)/25);
+  this.txt.text(this.doc._id+"\ndis: " + this.distance + "\nrssi: " + smoothrssi);
 
 
 }

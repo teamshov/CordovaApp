@@ -15,7 +15,7 @@ origin.y = 554;
 var scale = {};
 scale.y = -11.2;
 scale.x = 10.9;
-
+var TESTER = document.getElementById('tester');
 
 function asHexString(i) {
   var hex;
@@ -67,7 +67,7 @@ var app = {
       // scan for all devices
       bluetoothle.startScan(app.onDiscoverDevice, app.onError, {
         "scanMode": bluetoothle.SCAN_MODE_LOW_LATENCY,
-        "matchMode": bluetoothle.MATCH_MODE_AGGRESSIVE,
+        //"matchMode": bluetoothle.MATCH_MODE_AGGRESSIVE,
       });
   },
   onDiscoverDevice: function(device) {
@@ -167,18 +167,29 @@ function AddSelectedBeacon() {
     }
 }
 
-var avgs = 10
+var k = 10
 function updateBeacon(rssi) {
+
+
   var offset = this.doc.offset
-  this.rssis[this.rssii%avgs] = rssi;
+
+  this.rssis.push(rssi);
+  
   ++this.rssii 
-  var arssi = 0;
-  for(var i = 0; i < avgs; i++) {
-    arssi += this.rssis[i]
+
+  var n = this.rssii-1;
+  var a = 0.1
+  
+  if(n >= 1) {
+    var max = Math.max(this.rssis[n], this.p)
+    var min = Math.min(this.rssis[n], this.p)
+    this.p = min*a+max*(1-a)
+    
+  } else {
+    this.p = this.rssis[n];
   }
-  arssi = arssi / avgs;
-  this.distance = Math.pow(10, (offset-arssi)/25);
-  this.txt.text(this.doc._id+"\ndis: " + this.distance + "\nrssi: " + rssi);
+  this.distance = Math.pow(10, (-71-this.p)/20);
+  this.txt.text(this.doc._id+"\ndis: " + this.distance + "\nrssi: " + this.p);
 
 
 }
@@ -230,7 +241,9 @@ function addBeacon(doc) {
     layer.add(label);
     layer.draw();
     beacon.update = updateBeacon.bind(beacon);
-    beacon.rssis = new Array(avgs)
+    beacon.rssis = []
+    beacon.rssit = []
+    beacon.predict = []
     beacon.rssii = 0;
     addedBeacons.push(beacon);
     beacons[bid] = beacon;
