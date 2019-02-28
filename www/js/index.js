@@ -16,6 +16,7 @@ var scale = {};
 scale.y = -11.2;
 scale.x = 10.9;
 var plot = document.getElementById('plot');
+var shov = new Shov();
 
 
 function asHexString(i) {
@@ -62,9 +63,19 @@ var app = {
   },
   onDeviceReady: function() {
     bluetoothle.initialize(app.startScan);
+
+    shov.onBeaconInit = addBeacon;
+    shov.init();
+    setupKonva();
+    setInterval(updateState, 1000);
+    
       
   },
   startScan: function(status) {
+    
+    for(var b in shov.beacons) {
+      addBeacon(b)
+    }
       // scan for all devices
       bluetoothle.startScan(app.onDiscoverDevice, app.onError, {
         "scanMode": bluetoothle.SCAN_MODE_LOW_LATENCY,
@@ -80,8 +91,8 @@ var app = {
     new Uint8Array(data["16"]).slice(3, 11).forEach(e=>str+=asHexString(e))
     
   //console.log('RSSI: ' + rssi +"\ndata: " + str);
-  if(str in beacons)
-    beacons[str].update(rssi);
+  if(str in shov.beacons)
+    shov.beacons[str].update(rssi);
     
   },
   onError: function(reason) {
@@ -110,8 +121,8 @@ function updateState() {
       var upos = {x:x, y:y};
       var value = 0;
 
-      for(var bid  in beacons) {
-        var b = beacons[bid]
+      for(var bid  in shov.bkeys) {
+        var b = shov.beacons[shov.bkeys[bid]];
         var x2 = b.lbl.x();
         var y2 = b.lbl.y();
         var d = b.distance;
@@ -142,71 +153,13 @@ function writeMessage(message) {
   fglayer.draw();
 }
 
-$(function($) {
-    setupKonva();
-    populateBeacons();
-    setInterval(updateState, 1000);
-    app.initialize();
-});
-  
 
-function AddSelectedBeacon() {
-    var selectedBeacon = $("#beaconlist").children('option').filter(":selected");
-    var bid = selectedBeacon.val();
-    var transform = stage.getAbsoluteTransform().copy();
-
-            // to detect relative position we need to invert transform
-            transform.invert();
-
-            // now we find relative point
-            var pos = stage.getPointerPosition();
-
-            var mousepos = transform.point(pos);
-    if(addBeacon(bid, mousepos.x, mousepos.y)) {
-      selectedBeacon.attr('disabled', 'disabled')
-      $("#beaconlist").val("")
-    }
-}
-
-var k = 10
-function updateBeacon(rssi) {
-
-
-  var offset = this.doc.offset
-
-  //this.rssis.push(rssi);
-  
-  //++this.rssii 
-
-  //var n = this.rssii-1;
-  var a = 0.1
-  
-  if(this.p != null) {
-    var max = Math.max(rssi, this.p)
-    var min = Math.min(rssi, this.p)
-    this.p = min*a+max*(1-a)
-    
-  } else {
-    this.p = rssi;
-  }
-  this.rssik = this.kf.filter(rssi)
-
-  if(this.doc._id == "905bfc88fdb5f32d") {
-   // Plotly.plot(plot, {y: this.rssik}, {margin: {t:0}});
-  }
-  this.distance = Math.pow(10, (offset-this.rssik)/20);
-  this.txt.text(this.doc._id+"\ndis: " + this.distance + "\nrssi: " + this.rssik);
-}
-
-function addBeacon(doc) {
+function addBeacon() {
+    var doc = this.doc;
     var bid = doc._id;
     var x = doc.xpos*scale.x + origin.x;
     var y = doc.ypos*scale.y + origin.y;
-    if(bid=="") return false;
 
-    var beacon = {};
-    beacon.doc = doc; 
-    
     var label = new Konva.Label({
       x: x,
       y: y,
@@ -224,14 +177,14 @@ function addBeacon(doc) {
             shadowOffset: 10,
             shadowOpacity: 0.5
         }));
-        beacon.txt = new Konva.Text({
+    this.txt = new Konva.Text({
           text: bid,
           fontFamily: 'Calibri',
           fontSize: 18,
           padding: 5,
           fill: 'white'
-      });
-    label.add(beacon.txt);
+    });
+    label.add(this.txt);
 
     label.on('dragmove', function () {
       var pos = this;
@@ -240,44 +193,12 @@ function addBeacon(doc) {
       writeMessage('x: ' + (x-origin.x)/scale.x + ', y: ' + (y-origin.y)/scale.y);
     });
 
-    beacon.lbl = label;
+    this.lbl = label;
     
     layer.add(label);
     layer.draw();
-    beacon.update = updateBeacon.bind(beacon);
-    beacon.rssis = []
-    beacon.rssit = []
-    beacon.predict = []
-    beacon.rssii = 0;
-    beacon.kf = new KalmanFilter({R: 0.008, Q: 10})
-    addedBeacons.push(beacon);
-    beacons[bid] = beacon;
     return true;
 };
-
-function populateBeacons() {
-  $.getJSON("http://omaraa.ddns.net:62027/db/all/beacons", function(r){
-      var beaconsr = r
-      console.log(r)
-      var select = $("#beaconlist")
-
-      for(var b in beaconsr){
-        var newoption = $("<option></option>")
-        newoption.text(beaconsr[b])
-        newoption.val(beaconsr[b])
-        newoption.appendTo(select)
-      }
-
-      for(var b in beaconsr){
-         $.get("http://omaraa.ddns.net:62027/db/beacons/" + beaconsr[b] , function(r){
-          console.log(r);
-            addBeacon(r);
-            var selectedBeacon = $("#beaconlist option[value="+r._id+"]");
-            selectedBeacon.attr('disabled', 'disabled')
-         });
-      }
-  });
-}
 
 function setupKonva() {
 
@@ -318,8 +239,6 @@ function setupKonva() {
   
   setGrid();
   setFloorplan()
-
-  stage.on('dblclick touchstart', AddSelectedBeacon);
 
   // add the shape to the layer
   layer.add(circle);
@@ -393,19 +312,6 @@ function setFloorplan() {
   reader.readAsDataURL(file);
 });*/
 
-$("#save").click(function() {
-  for(var i = 0; i < addedBeacons.length; i++) {
-    var beacon = addedBeacons[i];
-    var x = beacon.lbl.x()
-    var y = beacon.lbl.y()
-    console.log({"xpos": (x-origin.x)/scale.x, "ypos": (y-origin.y)/scale.y});
-      $.ajax({
-        url: 'http://omaraa.ddns.net:62027/db/beacons/' + beacon.bid, 
-        type: 'PUT',
-        data: JSON.stringify({"xpos": (x-origin.x)/scale.x, "ypos": (y-origin.y)/scale.y})
-      });
-  }
-});
 
 function scaleX(x) {
   return x*scale.x + origin.x;
@@ -441,3 +347,5 @@ function setGrid() {
   }
   gridlayer.batchDraw();
 }
+
+app.initialize();

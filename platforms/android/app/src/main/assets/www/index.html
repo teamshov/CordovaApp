@@ -17,8 +17,6 @@
     }
 
     #large-container {
-        width: 3000px;
-        height: 3000px;
         overflow: hidden;
     }
 
@@ -29,6 +27,14 @@
         margin: 10px;
         border: 1px solid grey;
     }
+
+    .row {
+  display: flex;
+}
+
+.column {
+  flex: 50%;
+}
 </style>
 </head>
 <body>
@@ -45,13 +51,14 @@
     </div>
     <script src="cordova.js"></script>
     <script src="js/kalman.min.js"></script>
-    <div id="plot"></div>
-    <div id="scroll-container">
+   
+    
+
+      <div id="scroll-container">
         <div id="large-container">
             <div id="kc"></div>
         </div>
-    </div>
-    
+    <script src="js/Shov.js"></script>
     <script src="js/index.js"></script>
 </body>
 </html>
